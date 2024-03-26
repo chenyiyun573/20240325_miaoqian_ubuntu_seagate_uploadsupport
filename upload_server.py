@@ -1,7 +1,7 @@
+import os
 from fastapi import FastAPI, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from datetime import datetime
-import os
 import pytz
 
 app = FastAPI()
@@ -17,6 +17,9 @@ app.add_middleware(
 
 @app.post("/upload/")
 async def upload_file(file: UploadFile = File(...)):
+    # Retrieve the base file storage path from the environment variable
+    base_file_path = os.getenv('FILE_STORAGE_PATH', '/default/path/if/not/set')
+
     # Convert the current time to Beijing time
     beijing_tz = pytz.timezone('Asia/Shanghai')
     date_time_bj = datetime.now(beijing_tz)
@@ -32,8 +35,8 @@ async def upload_file(file: UploadFile = File(...)):
     # Add the date, time, and file size to the filename with 'BJT' suffix
     filename = f"{date_str}_BJT_{file_size}_{file.filename}"
 
-    # Define the location to save the file
-    file_location = f"/media/yiyun/seagate/Timeline/{filename}"
+    # Use the environment variable for the file location
+    file_location = os.path.join(base_file_path, filename)
 
     # Write the file in chunks to the specified location
     with open(file_location, "wb") as buffer:
@@ -41,5 +44,4 @@ async def upload_file(file: UploadFile = File(...)):
             buffer.write(data)
 
     return {"filename": filename}
-
 
